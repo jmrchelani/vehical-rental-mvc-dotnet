@@ -1,0 +1,121 @@
+﻿@using VIPRentals.Data
+@model VIPRentals.Models.Vehicle
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<UserModel> UserManager
+
+
+@{
+    ViewData["Title"] = "Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>Vehicle</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Model)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Model)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Make)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Make)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Year)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Year)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Price)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Price)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Owner)
+        </dt>
+        <dd class="col-sm-10">
+            @Utilities.getNameFromUsername(UserManager, Model.Owner)
+        </dd>
+        <dt class = "col-sm-2">
+            Image
+        </dt>
+        <dd class = "col-sm-10">
+            <img src="@Utilities.getImageSrc(Model.Image, Context)" height="200px" />
+        </dd>
+    </dl>
+</div>
+
+@* A "Rent now" button which opens a modal with form for start and end datetime *@
+
+<div>
+    <!-- Button trigger modal -->
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#rentModal">
+        Rent this vehicle
+    </button>
+
+    <!-- Modal -->
+    <div class="modal fade" id="rentModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+
+            <form asp-controller="Rentals" asp-action="RentNow" method="POST" onsubmit="return validateDates();">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="rentModalLabel">Rent this vehicle</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="VehicleId" value="@Model.Id" />
+                        <input type="hidden" name="Rentee" value="@UserManager.GetUserId(User)" />
+                        <input type="hidden" name="Price" value="@Model.Price" />
+                        <input type="text" id="vehicle" name="vehicle" value="@Model.Make @Model.Model" readonly />
+
+                        <br />
+
+                        <input type="text" id="startDateTime" name="startDateTime" placeholder="Starting from" required />
+
+                        <br />
+
+                        <input type="text" id="endDateTime" name="endDateTime" placeholder="Ending at" required/>
+
+                        <br />
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Rent Now</button>
+                    </div>
+                </div>
+            </form>
+
+            <script>
+                function validateDates() {
+                    var start = new Date(document.getElementById("startDateTime").value);
+                    var end = new Date(document.getElementById("endDateTime").value);
+
+                    if (end <= start) {
+                        alert("End date and time must be after the start date and time (at least one hour rental allowed).");
+                        return false;
+                    }
+                    return true;
+                }
+            </script>
+
+            
+        </div>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>

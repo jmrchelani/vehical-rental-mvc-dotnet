@@ -1,0 +1,98 @@
+﻿@model IEnumerable<VIPRentals.Models.Vehicle>
+
+@{
+    ViewData["Title"] = "Index";
+    if (ViewData["CurrentShowOwned"] == null)
+    {
+        ViewData["CurrentShowOwned"] = "";
+    }
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Index</h1>
+
+@* Search bar, send get request with the sort value *@
+
+<form asp-action="Index" method="get">
+    <p>
+        <input type="hidden" name="sortOrder" value="@ViewData["CurrentFilter"]" />
+        <input type="hidden" name="showOwned" value="@ViewData["CurrentShowOwned"]" />
+        <input type="text" name="searchString" placeholder="Search make or model.." value="@ViewData["CurrentSearch"]" />
+        <input type="submit" value="Search" />
+    </p>
+</form>
+
+<p>
+    <a asp-action="Create">Add your vehicle!</a>
+</p>
+@if (ViewData["CurrentShowOwned"].ToString() != "true")
+{
+<p>
+    @Html.ActionLink("Show only owned vehicles!", "Index", new { sortOrder = ViewData["CurrentFilter"], searchString = ViewData["CurrentSearch"], showOwned = "true" })
+</p>
+   } else {
+<p>
+    @Html.ActionLink("Show all vehicles!", "Index", new { sortOrder = ViewData["CurrentFilter"], searchString = ViewData["CurrentSearch"], showOwned = "false" })
+    </p>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            @* <th>
+                @Html.DisplayNameFor(model => model.Model)
+            </th> *@
+            <th>
+                @Html.ActionLink(@Html.DisplayNameFor(model => model.Model), "Index", new { sortOrder = ViewData["ModelSortParm"], searchString = ViewData["CurrentSearch"], showOwned = ViewData["CurrentShowOwned"] })
+            </th>
+            @* <th>
+                @Html.DisplayNameFor(model => model.Make)
+            </th> *@
+            <th>
+                @Html.ActionLink(@Html.DisplayNameFor(model => model.Make), "Index", new { sortOrder = ViewData["MakeSortParm"], searchString = ViewData["CurrentSearch"], showOwned = ViewData["CurrentShowOwned"] })
+            </th>
+            @* <th>
+                @Html.DisplayNameFor(model => model.Year)
+            </th> *@
+            <th>
+                @Html.ActionLink(@Html.DisplayNameFor(model => model.Year), "Index", new { sortOrder = ViewData["YearSortParm"], searchString = ViewData["CurrentSearch"], showOwned = ViewData["CurrentShowOwned"] })
+            </th>
+            @* <th>
+                @Html.DisplayNameFor(model => model.Price)
+            </th> *@
+            <th>
+                @Html.ActionLink(@Html.DisplayNameFor(model => model.Price), "Index", new { sortOrder = ViewData["PriceSortParm"], searchString = ViewData["CurrentSearch"], showOwned = ViewData["CurrentShowOwned"] })
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Image)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Model)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Make)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Year)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Price)
+            </td>
+            <td>
+                <img src="@item.Image" height="200px" />
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
