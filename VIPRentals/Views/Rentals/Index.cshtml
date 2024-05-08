@@ -3,15 +3,31 @@
 @inject UserManager<UserModel> UserManager
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "My Rentals";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Index</h1>
+@if(ViewData["checkout"] != null)
+{
+    @if((bool)ViewData["checkout"])
+    {
+        <div class="alert alert-success" role="alert">
+            Successfully rented the vehicle!
+        </div>
+        @(ViewData["checkout"] = null)
+    }
+}
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
+<h1>My Rentals</h1>
+
+<div class="alert alert-warning" role="alert">
+    <strong>Warning:</strong> Please note that rents are non-refundable, so make sure to rent with surety.
+</div>
+
+<div class="alert alert-info" role="alert">
+    <strong>Info:</strong> You can leave a review for the vehicle you rented after the end date of the rental period.
+</div>
+
 <table class="table">
     <thead>
         <tr>
@@ -52,11 +68,89 @@
                 @Html.DisplayFor(modelItem => item.TotalPrice)
             </td>
             <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+
+
+                        @if ((DateTime.Now > DateTime.Parse(item.EndDate)) && !((ViewData["Reviews"] as Dictionary<int,bool>).GetValueOrDefault(item.Id, false)))
+                        {
+                            <!-- Button trigger modal -->
+                            <button id="rental@(item.Id)" type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#rentModal">
+                                Leave a review!
+                            </button>
+
+                            <script>
+                                document.getElementById("rental@(item.Id)").addEventListener("click", function () {
+                                    document.getElementsByName("rentalId")[0].value = "@item.Id";
+                                    document.getElementsByName("vehicleId")[0].value = "@item.Vehicle";
+                                    document.getElementsByName("userId")[0].value = "@UserManager.GetUserId(User)";
+                                });
+                            </script>
+
+
+                        }
+                    
+                    
+
+
             </td>
         </tr>
 }
+        <!-- Modal -->
+        <div class="modal fade" id="rentModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rentModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+
+                <form asp-controller="Reviews" asp-action="LeaveReview" method="POST" onsubmit="return validateForm();">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="rentModalLabel">Leave a Review</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" name="vehicleId" />
+                            <input type="hidden" name="userId"  />
+                            <input type="hidden" name="rentalId"  />
+                            <input type="hidden" name="total" value="10" />
+
+                            <br />
+
+                            <input type="number" id="rating" name="rating" placeholder="Rating out of 5" required />
+
+                            <br />
+
+                            <input type="text" id="comment" name="comment" placeholder="Comments..." required />
+
+                            <br />
+
+                            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Add Review</button>
+                        </div>
+                    </div>
+                </form>
+
+
+
+
+            </div>
     </tbody>
 </table>
+<script>
+
+    function validateForm() {
+        var rating = document.getElementById("rating").value;
+        var comments = document.getElementById("comments").value;
+
+        if (rating < 1 || rating > 10) {
+            alert("Rating must be between 1 and 10.");
+            return false;
+        }
+
+        if (comments.length < 10) {
+            alert("Comments must be at least 10 characters long.");
+            return false;
+        }
+
+        return true;
+    }
+</script>

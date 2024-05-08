@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -82,10 +83,18 @@ namespace VIPRentals.Controllers
 
             var vehicle = await _context.Vehicle
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (vehicle == null)
             {
                 return NotFound();
             }
+
+            var reviews = _context.Review.Where(r => r.Vehicle == vehicle.Id.ToString()).ToList();
+
+            // sort by date
+            reviews.Sort((a, b) => DateTime.Compare(DateTime.Parse(b.Date), DateTime.Parse(a.Date)));
+
+            ViewData["Reviews"] = reviews ?? [];
 
             return View(vehicle);
         }
@@ -129,9 +138,10 @@ namespace VIPRentals.Controllers
             return View(vehicle);
         }
 
-        
+
 
         // GET: Vehicles/Edit/5
+        [Authorize]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -144,6 +154,13 @@ namespace VIPRentals.Controllers
             {
                 return NotFound();
             }
+
+            if (vehicle.Owner != User.Identity.Name)
+            {
+                ViewData["Error"] = "You do not have permission to edit this vehicle";
+                return View("Error");
+            }
+
             return View(vehicle);
         }
 
@@ -189,6 +206,7 @@ namespace VIPRentals.Controllers
         }
 
         // GET: Vehicles/Delete/5
+        [Authorize]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -201,6 +219,12 @@ namespace VIPRentals.Controllers
             if (vehicle == null)
             {
                 return NotFound();
+            }
+
+            if (vehicle.Owner != User.Identity.Name)
+            {
+                ViewData["Error"] = "You do not have permission to delete this vehicle";
+                return View("Error");
             }
 
             return View(vehicle);

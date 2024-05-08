@@ -26,7 +26,7 @@ namespace VIPRentals.Models
 
         [Required]
         [DataType(DataType.Currency)]
-        [Display(Name = "Per-day-rent Price")]
+        [Display(Name = "Per-hour-rent Price")]
         public decimal Price { get; set; }
 
         [DataType(DataType.ImageUrl)]

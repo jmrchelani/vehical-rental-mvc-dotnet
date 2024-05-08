@@ -73,6 +73,9 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
+                        <div class="alert alert-warning" role="alert">
+                            <strong>Warning:</strong> Please note that rents are non-refundable, so make sure to rent with surety.
+                        </div>
                         <input type="hidden" name="VehicleId" value="@Model.Id" />
                         <input type="hidden" name="Rentee" value="@UserManager.GetUserId(User)" />
                         <input type="hidden" name="Price" value="@Model.Price" />
@@ -116,6 +119,43 @@
 </div>
 
 <div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
     <a asp-action="Index">Back to List</a>
+</div>
+
+
+@* Reviews *@
+<div>
+    <h4>Reviews</h4>
+    <hr />
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    User
+                </th>
+                <th>
+                    Rating
+                </th>
+                <th>
+                    Comments
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in ViewData["Reviews"] as List<VIPRentals.Models.Review>)
+            {
+                <tr>
+                    <td>
+                        @UserManager.FindByIdAsync(item.User).Result.FullName
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Rating)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Comment)
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>

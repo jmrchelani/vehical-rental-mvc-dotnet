@@ -14,6 +14,8 @@ using VIPRentals.Data;
 using VIPRentals.Models;
 using System.Net.Http;
 using Microsoft.IdentityModel.Tokens;
+using Stripe.Checkout;
+using Stripe;
 
 namespace VIPRentals.Controllers
 {
@@ -29,34 +31,54 @@ namespace VIPRentals.Controllers
         }
 
         // GET: Rentals
+        [Authorize]
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Rental.ToListAsync());
-        }
 
-        // GET: Rentals/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
+            var reviews = await _context.Review.ToListAsync();
+            if (reviews == null)
             {
-                return NotFound();
+                Debug.WriteLine("Reviews is null from DB");
+                reviews = new List<Models.Review>();
             }
 
-            var rental = await _context.Rental
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (rental == null)
+            var rentals = await _context.Rental.ToListAsync();
+            if (rentals == null)
             {
-                return NotFound();
+                Debug.WriteLine("Rentals is null from DB");
+                rentals = new List<Rental>();
             }
 
-            return View(rental);
+            rentals = rentals.Where(x => x.User == _userManager.GetUserAsync(User).Result.Id).ToList();
+
+            // Create a map of rental id to boolean value of whether the user has reviewed the rental or not
+            Dictionary<int, bool> reviewedRentals = new Dictionary<int, bool>();
+
+            foreach (var rental in rentals)
+            {
+                var review = reviews.Find(x =>(x.Rental == rental.Id.ToString()) && (x.User == rental.User));
+                if (review != null)
+                {
+                    reviewedRentals[rental.Id] = true;
+                }
+                else
+                {
+                    reviewedRentals[rental.Id] = false;
+                }
+            }
+            
+
+            ViewData["Reviews"] = reviewedRentals;
+
+            if (Request.Query.ContainsKey("checkout"))
+            {
+                ViewData["checkout"] = true;
+            }
+
+            return View(rentals);
         }
 
-        // GET: Rentals/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
+        
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> RentNow([FromServices] IWebHostEnvironment env)
@@ -125,9 +147,48 @@ namespace VIPRentals.Controllers
                     User = _user.Id
                 };
 
-                _context.Add(rental);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                String veh = vehicle.Make + " " + vehicle.Model + " " + vehicle.Year;
+                // Contoller: Rentals, Action: Index
+                var successUrl = Request.Scheme + "://" + Request.Host + "/Rentals/PaymentDone?startDate=" + start.ToString() + "&endDate=" + end.ToString() + "&vehicleId=" + vehicle.Id + "&checkout=true";                                                                                                                      
+                var cancelUrl = Request.Scheme + "://" + Request.Host + "/Rentals/CancelledCheckout";
+
+                
+                StripeConfiguration.ApiKey = "sk_test_4eC39HqLyjWDarjtT1zdp7dc";
+                
+
+                var prodoptions = new ProductCreateOptions { Name = "Vehicle Rent: "+veh };
+                var prodservice = new ProductService();
+                var product = prodservice.Create(prodoptions);
+                var options = new PriceCreateOptions
+                {
+                    Product = product.Id,
+                    UnitAmount = (long?)rental.TotalPrice * 100,
+                    Currency = "usd",
+                };
+                var service = new PriceService();
+                Price priceObj = service.Create(options);
+
+                var sessionoptions = new SessionCreateOptions
+                {
+                    LineItems = new List<SessionLineItemOptions>
+                {
+                  new SessionLineItemOptions
+                  {
+                    Price = priceObj.Id,
+                    Quantity = 1,
+                  },
+                },
+                    Mode = "payment",
+                    SuccessUrl = successUrl,
+                    CancelUrl = cancelUrl,
+                };
+
+                var serviceObj = new SessionService();
+                Session session = serviceObj.Create(sessionoptions);
+
+                Response.Headers.Add("Location", session.Url);
+                return new StatusCodeResult(303);
+
             }
             else
             {
@@ -138,112 +199,39 @@ namespace VIPRentals.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: Rentals/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,StartDate,EndDate,TotalPrice")] Rental rental)
+        [Authorize]
+        public async Task<IActionResult> PaymentDone([FromQuery] String startDate, [FromQuery] String endDate, [FromQuery] String vehicleId)
         {
-            if (ModelState.IsValid)
+            Rental rental = new Rental
             {
-                _context.Add(rental);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(rental);
-        }
+                StartDate = startDate,
+                EndDate = endDate,
+                TotalPrice = 0,
+                Vehicle = vehicleId,
+                User = _userManager.GetUserAsync(User).Result.Id
+            };
 
-        // GET: Rentals/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var rental = await _context.Rental.FindAsync(id);
-            if (rental == null)
-            {
-                return NotFound();
-            }
-            return View(rental);
-        }
-
-        // POST: Rentals/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,StartDate,EndDate,TotalPrice")] Rental rental)
-        {
-            if (id != rental.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(rental);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!RentalExists(rental.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(rental);
-        }
-
-        // GET: Rentals/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var rental = await _context.Rental
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (rental == null)
-            {
-                return NotFound();
-            }
-
-            return View(rental);
-        }
-
-        // POST: Rentals/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var rental = await _context.Rental.FindAsync(id);
-            if (rental != null)
-            {
-                _context.Rental.Remove(rental);
-            }
-
+            _context.Add(rental);
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            
+            return RedirectToAction(nameof(Index), new { checkout = true });
         }
 
+        
+        [Authorize]
         private bool RentalExists(int id)
         {
             return _context.Rental.Any(e => e.Id == id);
         }
 
+        [Authorize]
         public async Task<IActionResult> AlreadyRented()
+        {
+            return View();
+        }
+
+        [Authorize]                             
+        public async Task<IActionResult> CancelledCheckout()
         {
             return View();
         }

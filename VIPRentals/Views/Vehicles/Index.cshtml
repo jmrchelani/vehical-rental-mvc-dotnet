@@ -1,7 +1,10 @@
 ﻿@model IEnumerable<VIPRentals.Models.Vehicle>
+@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<UserModel> UserManager
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Vehicles";
     if (ViewData["CurrentShowOwned"] == null)
     {
         ViewData["CurrentShowOwned"] = "";
@@ -9,7 +12,12 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Index</h1>
+<h1>Vehicle List</h1>
+
+
+<div class="alert alert-warning" role="alert">
+    <strong>Warning:</strong> Please note that rents are non-refundable, so make sure to rent with surety.
+</div>
 
 @* Search bar, send get request with the sort value *@
 
@@ -88,9 +96,19 @@
                 <img src="@item.Image" height="200px" />
             </td>
             <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                    @if (User.Identity.Name == item.Owner)
+                    {
+                        <a asp-action="Edit" asp-route-id="@(item.Id)">Edit</a> @Html.Raw(" | ")
+                    }
+                    
+                    <a asp-action="Details" asp-route-id="@item.Id">Details</a>
+                    @if (User.Identity.Name == item.Owner)
+                    {
+                        @Html.Raw(" | ")
+                        <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                    }
+                    
+                
             </td>
         </tr>
 }

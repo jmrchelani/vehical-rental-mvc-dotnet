@@ -16,5 +16,6 @@ namespace VIPRentals.Data
 
         public DbSet<VIPRentals.Models.Vehicle> Vehicle { get; set; } = default!;
         public DbSet<VIPRentals.Models.Rental> Rental { get; set; } = default!;
+        public DbSet<VIPRentals.Models.Review> Review { get; set; } = default!;
     }
 }
