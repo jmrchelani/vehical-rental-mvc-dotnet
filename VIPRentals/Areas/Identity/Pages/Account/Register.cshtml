@@ -4,12 +4,10 @@
     ViewData["Title"] = "Register";
 }
 
-<h1 class="text-center">@ViewData["Title"]</h1>
-
 <div class="row">
     <div class="col-md-6" style="margin-left: auto; margin-right:auto;">
         <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <h2 class="text-center">Create a new account.</h2>
+            <h2 class="text-center">Welcome! Register yourselves!</h2>
             <hr />
             <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
             

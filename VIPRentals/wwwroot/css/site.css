@@ -1,5 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Fjalla+One&display=swap');
+* {
+    font-family: "Fjalla One", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+}
+
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
@@ -19,4 +26,62 @@ html {
 
 body {
   margin-bottom: 60px;
+  background-color: #1E1E2C;
+  color: #FFFFFF;
+}
+
+.navbar {
+    background-color: #1E1E2C;
+    color: #FFFFFF;
+}
+
+.nav-link, .navbar-brand {
+    color: #FFFFFF;
+}
+
+.nav-link:hover, .navbar-brand:hover{
+    color: #33E1ED;
+}
+
+.features img {
+    width: 100%;
+    height: auto;
+    max-width: 100%; /* Ensure images don't exceed their container */
+    object-fit: cover; /* Maintain aspect ratio and cover container */
+    border-radius: 10px; /* Optional: Add border radius for rounded corners */
+}
+
+.features .col-md-4 {
+    transition: transform 0.3s ease; /* Smooth transition effect */
+}
+
+.features .col-md-4:hover {
+        transform: translate(-10px,-10px); /* Move the element up by 5px on hover */
+}
+
+.btn {
+    background-color: #33E1ED;
+    color: #1E1E2C;
+    border: 1px solid #1E1E2C;
+}
+
+.btn:hover {
+    background-color: #1E1E2C;
+    color: #33E1ED;
+    border: 1px solid #33E1ED;
+
+}
+
+.form-control, .form-control:focus {
+    background-color: #1E1E2C;
+    color: #33E1ED;
+}
+
+a {
+    text-decoration: none;
+    color: #33E1ED;
+}
+
+p {
+    font-size: 0.8rem;
 }
